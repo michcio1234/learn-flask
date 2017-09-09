@@ -1,6 +1,8 @@
 from flask import Flask, jsonify, abort, make_response, request
+from flask_restful import Resource, Api
 
 app = Flask(__name__)
+api = Api(app)
 
 
 tasks = [
@@ -34,31 +36,33 @@ def elo():
     return jsonify(["No siema."])
 
 
-@app.route('/todo/api/v1.0/tasks', methods=['GET'])
-def get_tasks():
-    return jsonify({'tasks': tasks})
+class TasksList(Resource):
+    def get(self):
+        return {'tasks': tasks}
+
+    def post(self):
+        if (not request.json) or ('title' not in request.json):
+            abort(400)
+        task = {
+            'id': tasks[-1]['id'] + 1,
+            'title': request.json['title'],
+            'description': request.json.get('description', ""),
+            'done': False
+        }
+        tasks.append(task)
+        return {'task': task}, 201
 
 
-@app.route('/todo/api/v1.0/tasks/<int:task_id>', methods=['GET'])
-def get_task(task_id):
-    task = [task for task in tasks if task['id'] == task_id]
-    if len(task) == 0:
-        abort(404)
-    return jsonify({'task': task[0]})
+class Task(Resource):
+    def get(self, id):
+        task = [task for task in tasks if task['id'] == id]
+        if len(task) == 0:
+            abort(404)
+        return {'task': task[0]}
 
 
-@app.route('/todo/api/v1.0/tasks', methods=['POST'])
-def add_task():
-    if (not request.json) or ('title' not in request.json):
-        abort(400)
-    task = {
-        'id': tasks[-1]['id'] + 1,
-        'title': request.json['title'],
-        'description': request.json.get('description', ""),
-        'done': False
-    }
-    tasks.append(task)
-    return jsonify({'task': task}), 201
+api.add_resource(TasksList, '/todo/api/v0.1/tasks', endpoint='tasks')
+api.add_resource(Task, '/todo/api/v0.1/tasks/<int:id>', endpoint='task')
 
 
 if __name__ == '__main__':

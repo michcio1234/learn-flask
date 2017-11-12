@@ -66,4 +66,4 @@ api.add_resource(Task, '/todo/api/v0.1/tasks/<int:id>', endpoint='task')
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5005)
